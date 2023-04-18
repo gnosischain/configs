@@ -66,7 +66,7 @@
     "registrar": "0x6000000000000000000000000000000000000000",
     "transactionPermissionContract": "0x4000000000000000000000000000000000000001",
     "transactionPermissionContractTransition": "0x0",
-    "terminalTotalDifficulty": "8962697262330598189161823785145342921539584"
+    "terminalTotalDifficulty": "5230480261941745121895531090833709178290176"
   },
   "genesis": {
     "seal": {
@@ -76,7 +76,7 @@
       }
     },
     "baseFeePerGas": "0x3b9aca00",
-    "difficulty": "0x01",
+    "difficulty": "0x20000",
     "gasLimit": "0x989680"
   },
   "accounts": {
