@@ -1,0 +1,30 @@
+name: Check Bootnodes ENRs padding
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check_padding:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install jq
+        run: sudo apt-get install jq
+
+      - name: Find and Check Padding in .yaml and .txt files
+        run: |
+          find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \) | while read -r FILE; do
+            BASE64_STRING=$(cat "$FILE" | jq -r '.[]' | sed -n 's/^"//p' | sed -n 's/"$//p')
+            PADDING=$(echo "$BASE64_STRING" | grep -o '=' | wc -l)
+            if [ $PADDING -eq 0 ]; then
+              echo "Base64 string in $FILE does not contain padding."
+            else
+              echo "Base64 string in $FILE contains padding."
+              exit 1
+            fi
+          done
