@@ -13,11 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Python
-        run: |
-          sudo apt-get update
-          sudo apt-get install python3
-
       - name: Check bootnodes ENRs for padding
         run: |
           files_with_padding=""
@@ -49,7 +44,7 @@ jobs:
             while read -r LINE; do
               if [[ "$LINE" =~ enr: ]]; then
                 BASE64_STRING=${LINE#enr:}
-                DECODED_STRING=$(echo "$BASE64_STRING" | base64 -d 2>/dev/null)
+                base64 -d <<< "$BASE64_STRING" 1>/dev/null
                 if [ $? -ne 0 ]; then
                   if [[ "$files_with_decoding_issue" != *"$FILE"* ]]; then
                     echo "Error: ENR could not be decoded in $FILE: $LINE"
