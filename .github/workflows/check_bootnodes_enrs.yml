@@ -20,6 +20,7 @@ jobs:
 
       - name: Check bootnodes ENRs have no padding
         run: |
+          contains_padding=false
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Checking paddings in file: $FILE"
             while read -r LINE; do
@@ -27,14 +28,19 @@ jobs:
                 BASE64_STRING=${LINE#enr:}
                 if [[ "$BASE64_STRING" =~ = ]]; then
                   echo "ENR in $FILE contains padding: $LINE"
-                  exit 1
+                  contains_padding=true
                 fi
               fi
             done < "$FILE"
           done
+          if [ "$contains_padding" = true ]; then
+            echo "Job failed due to padding in ENR strings."
+            exit 1
+          fi
 
       - name: Decode Base64
         run: |
+          contains_decoding_issue=false
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Test decoding in file: $FILE"
             while read -r LINE; do
@@ -45,8 +51,12 @@ jobs:
                   echo "Succesfully decoded base64: $LINE"
                 else
                   echo "ENR could not be decoded: $LINE"
+                  contains_decoding_issue=true
                 fi
               fi
             done < "$FILE"
           done
-
+          if [ "$contains_decoding_issue" = true ]; then
+            echo "Job failed due to decoding issues in ENR strings."
+            exit 1
+          fi
