@@ -27,8 +27,10 @@ jobs:
               if [[ "$LINE" =~ enr: ]]; then
                 BASE64_STRING=${LINE#enr:}
                 if [[ "$BASE64_STRING" =~ = ]]; then
-                  echo "Error: ENR in $FILE contains padding: $LINE"
-                  files_with_padding="$files_with_padding $FILE"
+                  if [[ "$files_with_padding" != *"$FILE"* ]]; then
+                    echo "Error: ENR in $FILE contains padding: $LINE"
+                    files_with_padding="$files_with_padding $FILE"
+                  fi
                 fi
               fi
             done < "$FILE"
@@ -49,8 +51,10 @@ jobs:
                 BASE64_STRING=${LINE#enr:}
                 DECODED_STRING=$(echo "$BASE64_STRING" | base64 -d 2>/dev/null)
                 if [ $? -ne 0 ]; then
-                  echo "Error: ENR could not be decoded in $FILE: $LINE"
-                  files_with_decoding_issue="$files_with_decoding_issue $FILE"
+                  if [[ "$files_with_decoding_issue" != *"$FILE"* ]]; then
+                    echo "Error: ENR could not be decoded in $FILE: $LINE"
+                    files_with_decoding_issue="$files_with_decoding_issue $FILE"
+                  fi
                 fi
               fi
             done < "$FILE"
