@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  check_padding:
+  check_enrs:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +23,8 @@ jobs:
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             BASE64_STRINGS=$(grep -Eo '^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?' "$FILE" | sed 's/"//g')
             for BASE64_STRING in $BASE64_STRINGS; do
-              if [[ "$BASE64_STRING" =~ [^A-Za-z0-9+/=] ]]; then
-                echo "Base64 string in $FILE contains invalid characters or padding: $BASE64_STRING"
+              if [[ "$BASE64_STRING" =~ = ]]; then
+                echo "Base64 string in $FILE contains padding."
                 exit 1
               fi
             done
