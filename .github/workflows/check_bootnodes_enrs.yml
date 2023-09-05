@@ -33,11 +33,13 @@ jobs:
       - name: Decode Base64
         run: |
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
-            BASE64_STRINGS=$(grep -Eo '^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?' "$FILE" | sed 's/"//g')
+            BASE64_STRINGS=$(grep -Eo '"enr:([a-zA-Z0-9+/]+={0,2})"' "$FILE" | sed 's/"enr://g' | sed 's/"//g')
             for BASE64_STRING in $BASE64_STRINGS; do
               DECODED_STRING=$(echo "$BASE64_STRING" | base64 -d 2>/dev/null)
               if [ $? -eq 0 ]; then
                 echo "Decoded base64 string in $FILE: $DECODED_STRING"
+              else
+                echo "Base64 string could not be decoded: $BASE64_STRING"
               fi
             done
           done
