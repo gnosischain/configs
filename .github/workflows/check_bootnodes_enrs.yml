@@ -19,15 +19,9 @@ jobs:
       - name: Check bootnodes ENRs have no padding
         run: |
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
-            BASE64_STRING=$(grep -Eo '^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?' "$FILE")
-            while read -r LINE; do
-              if [[ $LINE =~ ^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?$ ]]; then
-                BASE64_STRING="${BASH_REMATCH[1]}"
-                PADDING=$(python3 -c "import base64; print('=' in base64.b64decode('$BASE64_STRING').decode())")
-                if [ "$PADDING" = "True" ]; then
-                  echo "Base64 string in $FILE contains padding."
-                  exit 1
-                fi
-              fi
-            done <<< "$BASE64_STRING"
+            BASE64_STRING=$(grep -Eo '^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?' "$FILE" | sed 's/"//g')
+            if [[ $BASE64_STRING == *"="* ]]; then
+              echo "Base64 string in $FILE contains padding."
+              exit 1
+            fi
           done
