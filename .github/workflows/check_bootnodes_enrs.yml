@@ -21,27 +21,32 @@ jobs:
       - name: Check bootnodes ENRs have no padding
         run: |
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
-            ENR_STRINGS=$(grep -Eo '"enr:([a-zA-Z0-9+/]+={0,2})"' "$FILE" | sed 's/"enr://g' | sed 's/"//g')
-            for ENR_STRING in $ENR_STRINGS; do
-              BASE64_STRING=${ENR_STRING#*enr:}
-              if [[ "$BASE64_STRING" =~ = ]]; then
-                echo "Base64 string in $FILE after 'enr:' contains padding."
-                exit 1
+            echo "Checking paddings in file: $FILE"
+            while read -r LINE; do
+              if [[ "$LINE" =~ enr: ]]; then
+                BASE64_STRING=${LINE#enr:}
+                if [[ "$BASE64_STRING" =~ = ]]; then
+                  echo "ENR in $FILE contains padding: $LINE"
+                  exit 1
+                fi
               fi
-            done
+            done < "$FILE"
           done
 
       - name: Decode Base64
         run: |
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
-            ENR_STRINGS=$(grep -Eo '"enr:([a-zA-Z0-9+/]+={0,2})"' "$FILE" | sed 's/"enr://g' | sed 's/"//g')
-            for ENR_STRING in $ENR_STRINGS; do
-              BASE64_STRING=${ENR_STRING#*enr:}
-              DECODED_STRING=$(echo "$BASE64_STRING" | base64 -d 2>/dev/null)
-              if [ $? -eq 0 ]; then
-                echo "Decoded base64 string in $FILE after 'enr:': $DECODED_STRING"
-              else
-                echo "Base64 string after 'enr:' could not be decoded: $BASE64_STRING"
+            echo "Test decoding in file: $FILE"
+            while read -r LINE; do
+              if [[ "$LINE" =~ enr: ]]; then
+                BASE64_STRING=${LINE#enr:}
+                DECODED_STRING=$(echo "$BASE64_STRING" | base64 -d 2>/dev/null)
+                if [ $? -eq 0 ]; then
+                  echo "Succesfully decoded base64: $LINE"
+                else
+                  echo "ENR could not be decoded: $LINE"
+                fi
               fi
-            done
+            done < "$FILE"
           done
+
