@@ -44,6 +44,7 @@ jobs:
             while read -r LINE; do
               if [[ "$LINE" =~ enr: ]]; then
                 BASE64_STRING=${LINE#enr:}
+                echo "$BASE64_STRING"
                 base64 -d <<< "$BASE64_STRING" 1>/dev/null
                 if [ $? -ne 0 ]; then
                   if [[ "$files_with_decoding_issue" != *"$FILE"* ]]; then
