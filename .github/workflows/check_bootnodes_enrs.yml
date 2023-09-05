@@ -20,7 +20,7 @@ jobs:
 
       - name: Check bootnodes ENRs for padding
         run: |
-          contains_padding=false
+          files_with_padding=""
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Checking paddings in file: $FILE"
             while read -r LINE; do
@@ -28,37 +28,35 @@ jobs:
                 BASE64_STRING=${LINE#enr:}
                 if [[ "$BASE64_STRING" =~ = ]]; then
                   echo "Error: ENR in $FILE contains padding: $LINE"
-                  contains_padding=true
+                  files_with_padding="$files_with_padding $FILE"
                 fi
               fi
             done < "$FILE"
           done
-          if [ "$contains_padding" = true ]; then
-            echo "Error: Bootnodes ENR strings in the following files contain padding:"
-            find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \) -exec grep -l enr {} +
+          if [ -n "$files_with_padding" ]; then
+            echo "Error: Bootnodes ENR strings contain padding in the following files:"
+            echo "$files_with_padding"
             exit 1
           fi
 
       - name: Decode Base64
         run: |
-          contains_decoding_issue=false
+          files_with_decoding_issue=""
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Testing decoding in file: $FILE"
             while read -r LINE; do
               if [[ "$LINE" =~ enr: ]]; then
                 BASE64_STRING=${LINE#enr:}
                 DECODED_STRING=$(echo "$BASE64_STRING" | base64 -d 2>/dev/null)
-                if [ $? -eq 0 ]; then
-                  echo "Succesfully decoded base64: $LINE"
-                else
+                if [ $? -ne 0 ]; then
                   echo "Error: ENR could not be decoded in $FILE: $LINE"
-                  contains_decoding_issue=true
+                  files_with_decoding_issue="$files_with_decoding_issue $FILE"
                 fi
               fi
             done < "$FILE"
           done
-          if [ "$contains_decoding_issue" = true ]; then
-            echo "Error: Bootnodes ENR strings in the following files contain decoding issues:"
-            find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \) -exec grep -l enr {} +
+          if [ -n "$files_with_decoding_issue" ]; then
+            echo "Error: Bootnodes ENR strings have decoding issues in the following files:"
+            echo "$files_with_decoding_issue"
             exit 1
           fi
