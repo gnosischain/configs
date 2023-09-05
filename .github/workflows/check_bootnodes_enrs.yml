@@ -23,8 +23,8 @@ jobs:
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             BASE64_STRINGS=$(grep -Eo '^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?' "$FILE" | sed 's/"//g')
             for BASE64_STRING in $BASE64_STRINGS; do
-              if [[ "$BASE64_STRING" == *"="* ]]; then
-                echo "ENR string in $FILE contains padding."
+              if [[ "$BASE64_STRING" =~ [^A-Za-z0-9+/=] ]]; then
+                echo "Base64 string in $FILE contains invalid characters or padding."
                 exit 1
               fi
             done
@@ -35,7 +35,9 @@ jobs:
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             BASE64_STRINGS=$(grep -Eo '^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?' "$FILE" | sed 's/"//g')
             for BASE64_STRING in $BASE64_STRINGS; do
-              DECODED_STRING=$(echo "$BASE64_STRING" | base64 -d)
-              echo "Succesfully decoded ENR in $FILE: $DECODED_STRING"
+              DECODED_STRING=$(echo "$BASE64_STRING" | base64 -d 2>/dev/null)
+              if [ $? -eq 0 ]; then
+                echo "Decoded base64 string in $FILE: $DECODED_STRING"
+              fi
             done
           done
