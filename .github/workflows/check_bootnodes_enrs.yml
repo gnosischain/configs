@@ -18,25 +18,32 @@ jobs:
           sudo apt-get update
           sudo apt-get install python3
 
-      - name: Check bootnodes ENRs have no padding
+      - name: Check bootnodes ENRs for padding
         run: |
+          contains_padding=false
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Checking paddings in file: $FILE"
             while read -r LINE; do
               if [[ "$LINE" =~ enr: ]]; then
                 BASE64_STRING=${LINE#enr:}
                 if [[ "$BASE64_STRING" =~ = ]]; then
-                  echo "ENR in $FILE contains padding: $LINE"
-                  exit 1
+                  echo "Error: ENR in $FILE contains padding: $LINE"
+                  contains_padding=true
                 fi
               fi
             done < "$FILE"
           done
+          if [ "$contains_padding" = true ]; then
+            echo "Error: Bootnodes ENR strings in the following files contain padding:"
+            find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \) -exec grep -l enr {} +
+            exit 1
+          fi
 
       - name: Decode Base64
         run: |
+          contains_decoding_issue=false
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
-            echo "Test decoding in file: $FILE"
+            echo "Testing decoding in file: $FILE"
             while read -r LINE; do
               if [[ "$LINE" =~ enr: ]]; then
                 BASE64_STRING=${LINE#enr:}
@@ -44,9 +51,14 @@ jobs:
                 if [ $? -eq 0 ]; then
                   echo "Succesfully decoded base64: $LINE"
                 else
-                  echo "ENR could not be decoded: $LINE"
+                  echo "Error: ENR could not be decoded in $FILE: $LINE"
+                  contains_decoding_issue=true
                 fi
               fi
             done < "$FILE"
           done
-
+          if [ "$contains_decoding_issue" = true ]; then
+            echo "Error: Bootnodes ENR strings in the following files contain decoding issues:"
+            find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \) -exec grep -l enr {} +
+            exit 1
+          fi
