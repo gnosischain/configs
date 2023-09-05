@@ -13,15 +13,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install jq
-        run: sudo apt-get install jq
+      - name: Install Python
+        run: |
+          sudo apt-get update
+          sudo apt-get install python3
 
       - name: Check bootnodes ENRs have no padding
         run: |
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
-            BASE64_STRING=$(grep -Eo '^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?' "$FILE" | sed 's/"//g')
-            if [[ $BASE64_STRING == *"="* ]]; then
-              echo "Base64 string in $FILE contains padding."
-              exit 1
-            fi
+            BASE64_STRINGS=$(grep -Eo '^[[:space:]]*[- ]*["]?([a-zA-Z0-9+/]+={0,2})[[:space:]]*[- ]*["]?' "$FILE" | sed 's/"//g')
+            for BASE64_STRING in $BASE64_STRINGS; do
+              PADDING=$(python3 -c "import base64; print('=' in base64.b64decode('$BASE64_STRING').decode())")
+              if [ "$PADDING" == "True" ]; then
+                echo "ENR string in $FILE contains padding."
+                exit 1
+              fi
+            done
           done
