@@ -37,7 +37,7 @@ jobs:
           fi
 
       - name: Decode Base64
-        gitrun: |
+        run: |
           files_with_decoding_issue=""
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Testing decoding in file: $FILE"
