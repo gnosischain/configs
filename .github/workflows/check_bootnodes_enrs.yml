@@ -54,7 +54,8 @@ jobs:
                 fi
 
                 if [[ -n "$BASE64_STRING" ]]; then
-                  echo "$BASE64_STRING"
+                  echo "-L64QOijsdi9aVIawMb5h5PWueaPM9Ai6P17GNPFlHzz7MGJQ8tFMdYrEx8WQitNKLG924g2Q9cCdzg54M0UtKa3QIKCMxaHYXR0bmV0c4j__________4RldGgykDE2cEMCAABv__________-CaWSCdjSCaXCEi5AaWYlzZWNwMjU2azGhA8CjTkD4m1s8FbKCN18LgqlYcE65jrT148vFtwd9U62SiHN5bmNuZXRzD4N0Y3CCIyiDdWRwgiMo" | base64 -d
+                  echo "Decoded raw!"
                   echo "$BASE64_STRING" | base64 -d 1>/dev/null
                   if [ $? -ne 0 ]; then
                     if [[ "$files_with_decoding_issue" != *"$FILE"* ]]; then
