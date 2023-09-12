@@ -13,6 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Install enr-cli
+        run: cargo install enr-cli
+
       - name: Check bootnodes ENRs for padding
         run: |
           files_with_padding=""
@@ -36,30 +39,21 @@ jobs:
             exit 1
           fi
 
-      - name: Check base64 decoding
+      - name: Check ENR Strings with enr-cli
         run: |
           files_with_decoding_issue=""
 
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
-            echo "Testing decoding in file: $FILE"
+            echo "Testing ENR strings in file: $FILE"
             while read -r LINE; do
               if [[ "$LINE" =~ enr: ]]; then
                 ENR_LINE=$(echo "$LINE" | sed -e 's/#.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
 
-                if [[ "$ENR_LINE" =~ ^- ]]; then
-                  BASE64_STRING=$(echo "$ENR_LINE" | awk -F "enr:" '{print $2}' | awk '{gsub(/"/, "", $0); print}')
-                else
-                  BASE64_STRING=${ENR_LINE#enr:}
-                  BASE64_STRING=$(echo "$BASE64_STRING" | awk '{gsub(/"/, "", $0); print}')
-                fi
-
-                if [[ -n "$BASE64_STRING" ]]; then
-                  echo "-L64QOijsdi9aVIawMb5h5PWueaPM9Ai6P17GNPFlHzz7MGJQ8tFMdYrEx8WQitNKLG924g2Q9cCdzg54M0UtKa3QIKCMxaHYXR0bmV0c4j__________4RldGgykDE2cEMCAABv__________-CaWSCdjSCaXCEi5AaWYlzZWNwMjU2azGhA8CjTkD4m1s8FbKCN18LgqlYcE65jrT148vFtwd9U62SiHN5bmNuZXRzD4N0Y3CCIyiDdWRwgiMo" | base64 -d
-                  echo "Decoded raw!"
-                  echo "$BASE64_STRING" | base64 -d 1>/dev/null
+                if [[ -n "$ENR_LINE" ]]; then
+                  enr-cli read "$ENR_LINE" 1>/dev/null
                   if [ $? -ne 0 ]; then
                     if [[ "$files_with_decoding_issue" != *"$FILE"* ]]; then
-                      echo "Error: ENR could not be decoded in $FILE: enr:$BASE64_STRING"
+                      echo "Error: ENR could not be read in $FILE: $ENR_LINE"
                       files_with_decoding_issue="$files_with_decoding_issue $FILE"
                     fi
                   fi
@@ -67,7 +61,6 @@ jobs:
               fi
             done < "$FILE"
           done
-
           if [ -n "$files_with_decoding_issue" ]; then
             echo "Error: Bootnodes ENR strings have decoding issues in the following files:"
             echo "$files_with_decoding_issue"
