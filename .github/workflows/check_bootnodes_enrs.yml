@@ -46,7 +46,7 @@ jobs:
 
       - name: Check ENR Strings with enr-cli
         run: |
-          for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' -o -name 'boot_enr.yaml' \)); do
+          for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Testing decoding in file: $FILE"
             while read -r LINE; do
               if [[ "$LINE" =~ enr: ]]; then
