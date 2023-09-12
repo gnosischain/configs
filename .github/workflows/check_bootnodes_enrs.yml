@@ -46,7 +46,6 @@ jobs:
 
       - name: Check ENR Strings with enr-cli
         run: |
-          files_with_decoding_issue=""
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Testing decoding in file: $FILE"
             while read -r LINE; do
@@ -61,17 +60,10 @@ jobs:
                 if [[ -n "$BASE64_STRING" ]]; then
                   enr-cli read "$BASE64_STRING" 1>/dev/null
                   if [ $? -ne 0 ]; then
-                    if [[ "$files_with_decoding_issue" != *"$FILE"* ]]; then
-                      echo "Error: ENR could not be decoded in $FILE: enr:$BASE64_STRING"
-                      files_with_decoding_issue="$files_with_decoding_issue $FILE"
-                    fi
+                    echo "Error: ENR could not be decoded in $FILE: enr:$BASE64_STRING"
+                    exit 1
                   fi
                 fi
               fi
             done < "$FILE"
           done
-          if [ -n "$files_with_decoding_issue" ]; then
-            echo "Error: Bootnodes ENR strings have decoding issues in the following files:"
-            echo "$files_with_decoding_issue"
-            exit 1
-          fi
