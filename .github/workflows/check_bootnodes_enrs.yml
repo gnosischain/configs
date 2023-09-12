@@ -47,17 +47,19 @@ jobs:
                 ENR_LINE=$(echo "$LINE" | sed -e 's/#.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
 
                 if [[ "$ENR_LINE" =~ ^- ]]; then
-                  BASE64_STRING=$(echo "$ENR_LINE" | awk -F "enr:" '{print $2}' | awk '{$1=$1; gsub(/\"/, "", $0); print}')
+                  BASE64_STRING=$(echo "$ENR_LINE" | awk -F "enr:" '{print $2}' | awk '{gsub(/"/, "", $0); print}')
                 else
                   BASE64_STRING=${ENR_LINE#enr:}
-                  BASE64_STRING=$(echo "$BASE64_STRING" | awk '{$1=$1; gsub(/\"/, "", $0); print}')
+                  BASE64_STRING=$(echo "$BASE64_STRING" | awk '{gsub(/"/, "", $0); print}')
                 fi
 
-                base64 -d <<< "$BASE64_STRING" 1>/dev/null
-                if [ $? -ne 0 ]; then
-                  if [[ "$files_with_decoding_issue" != *"$FILE"* ]]; then
-                    echo "Error: ENR could not be decoded in $FILE: enr:$BASE64_STRING"
-                    files_with_decoding_issue="$files_with_decoding_issue $FILE"
+                if [[ -n "$BASE64_STRING" ]]; then
+                  echo "$BASE64_STRING" | base64 -d 1>/dev/null
+                  if [ $? -ne 0 ]; then
+                    if [[ "$files_with_decoding_issue" != *"$FILE"* ]]; then
+                      echo "Error: ENR could not be decoded in $FILE: enr:$BASE64_STRING"
+                      files_with_decoding_issue="$files_with_decoding_issue $FILE"
+                    fi
                   fi
                 fi
               fi
