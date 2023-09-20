@@ -21,6 +21,9 @@ jobs:
       - name: Install enr-cli
         run: cargo install enr-cli
 
+      - name: Install .yaml parser
+        run: wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
+
       - name: Check bootnodes ENRs for padding
         run: |
           files_with_padding=""
@@ -48,15 +51,18 @@ jobs:
         run: |
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Testing decoding in file: $FILE"
-            while read -r LINE; do
+            while IFS= read -r LINE; do
               if [[ "$LINE" =~ enr: ]]; then
-                ENR_LINE=$(echo "$LINE" | sed -e 's/#.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
-                if [[ "$ENR_LINE" =~ ^- ]]; then
-                  BASE64_STRING=$(echo "$ENR_LINE" | awk -F "enr:" '{print $2}' | awk '{gsub(/"/, "", $0); print}')
+                if [[ "$FILE" == *".yaml" ]]; then
+                  BASE64_STRING=${LINE#enr:}
+                elif [[ "$FILE" == *".txt" ]]; then
+                  BASE64_STRING=$(echo "$LINE" | grep -o 'enr:.*')
                 else
-                  BASE64_STRING=${ENR_LINE#enr:}
-                  BASE64_STRING=$(echo "$BASE64_STRING" | awk '{gsub(/"/, "", $0); print}')
+                  echo "Unsupported file type: $FILE"
+                  exit 1
                 fi
+
+                BASE64_STRING=$(echo "$BASE64_STRING" | awk '{gsub(/"/, "", $0); print}')
                 if [[ -n "$BASE64_STRING" ]]; then
                   enr-cli read "$BASE64_STRING" 1>/dev/null
                   if [ $? -ne 0 ]; then
