@@ -64,6 +64,7 @@ jobs:
 
                 BASE64_STRING=$(echo "$BASE64_STRING" | awk '{gsub(/"/, "", $0); print}')
                 if [[ -n "$BASE64_STRING" ]]; then
+                  echo "Testing decoding of enr:$BASE64_STRING"
                   enr-cli read "$BASE64_STRING" 1>/dev/null
                   if [ $? -ne 0 ]; then
                     echo "Error: ENR could not be decoded in $FILE: enr:$BASE64_STRING"
