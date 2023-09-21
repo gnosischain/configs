@@ -13,6 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Install yq
+        uses: mikefarah/yq@master
+
       - name: Install protobuf-compiler
         run: |
           sudo apt-get update
@@ -20,9 +23,6 @@ jobs:
 
       - name: Install enr-cli
         run: cargo install enr-cli
-
-      - name: Install .yaml parser
-        run: wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
 
       - name: Check bootnodes ENRs for padding
         run: |
