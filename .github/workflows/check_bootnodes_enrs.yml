@@ -51,23 +51,35 @@ jobs:
         run: |
           for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
             echo "Processing file: $FILE"
+
+            # Parse non empty and non comment lines
             if [[ "$FILE" == *".yaml" ]]; then
-              LINES=$(yq eval '.[] | select(test("enr:"))' "$FILE")
+              LINES=$(yq eval '.[]' "$FILE" | grep -v -E '^[[:space:]]*(#|$)')
             elif [[ "$FILE" == *".txt" ]]; then
-              LINES=$(grep -E '^[[:space:]]*enr:.*' "$FILE" | grep -v -E '^[[:space:]]*(#|$)')
+              LINES=$(grep -v -E '^[[:space:]]*(#|$)' "$FILE")
             else
               echo "Unsupported file type: $FILE"
               exit 1
             fi
 
+            # Process lines
             while IFS= read -r LINE; do
-              if [[ -n "$LINE" && "$LINE" =~ enr: ]]; then
-                echo "Processing line: $LINE"
-                enr-cli read "$LINE" 1>/dev/null
-                if [ $? -ne 0 ]; then
-                  echo "Error: enr-cli read failed for line: $LINE in file: $FILE"
-                  exit 1
-                fi
+              # Check if the line contains the "enr" prefix
+              if [[ -z "$LINE" ]]; then
+                continue
+              elif [[ "$LINE" != *enr:* ]]; then
+                echo "Error: Line is not proper enr string: in file: $FILE\nLine: $LINE"
+                exit 1
               fi
+
+              # Parse actual "enr" strings after the "enr:" prefix
+              ENR_STRING=$(echo "$LINE" | grep -o 'enr:[^[:space:]]*' | cut -d ':' -f2- | sed 's/^ *//')
+              echo "Processing line: $ENR_STRING"
+
+              # Use enr-cli read to validate the actual "enr" strings
+              enr-cli read "$ENR_STRING" 1>/dev/null || {
+                echo "Error: enr-cli read failed for line: $ENR_STRING in file: $FILE"
+                exit 1
+              }
             done <<< "$LINES"
           done
