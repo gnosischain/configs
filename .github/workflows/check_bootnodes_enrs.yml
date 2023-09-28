@@ -68,7 +68,8 @@ jobs:
               if [[ -z "$LINE" ]]; then
                 continue
               elif [[ "$LINE" != *enr:* ]]; then
-                echo "Error: Line is not proper enr string: in file: $FILE\nLine: $LINE"
+                echo "Error: Line is not proper enr string: in file: $FILE"
+                echo "Invalid line: $LINE"
                 exit 1
               fi
 
