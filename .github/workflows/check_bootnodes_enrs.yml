@@ -1,0 +1,86 @@
+name: Check Bootnodes ENRs
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check_enrs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install yq
+        uses: mikefarah/yq@master
+
+      - name: Install protobuf-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Install enr-cli
+        run: cargo install enr-cli
+
+      - name: Check bootnodes ENRs for padding
+        run: |
+          files_with_padding=""
+          for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
+            echo "Checking paddings in file: $FILE"
+            while read -r LINE; do
+              if [[ "$LINE" =~ enr: ]]; then
+                BASE64_STRING=${LINE#enr:}
+                if [[ "$BASE64_STRING" =~ = ]]; then
+                  if [[ "$files_with_padding" != *"$FILE"* ]]; then
+                    echo "Error: ENR in $FILE contains padding: $LINE"
+                    files_with_padding="$files_with_padding $FILE"
+                  fi
+                fi
+              fi
+            done < "$FILE"
+          done
+          if [ -n "$files_with_padding" ]; then
+            echo "Error: Bootnodes ENR strings contain padding in the following files:"
+            echo "$files_with_padding"
+            exit 1
+          fi
+
+      - name: Check ENR Strings with enr-cli
+        run: |
+          for FILE in $(find . -type f \( -name 'bootnodes.yaml' -o -name 'bootstrap_nodes.txt' \)); do
+            echo "Processing file: $FILE"
+
+            # Parse non empty and non comment lines
+            if [[ "$FILE" == *".yaml" ]]; then
+              LINES=$(yq eval '.[]' "$FILE" | grep -v -E '^[[:space:]]*(#|$)')
+            elif [[ "$FILE" == *".txt" ]]; then
+              LINES=$(grep -v -E '^[[:space:]]*(#|$)' "$FILE")
+            else
+              echo "Unsupported file type: $FILE"
+              exit 1
+            fi
+
+            # Process lines
+            while IFS= read -r LINE; do
+              # Check if the line contains the "enr" prefix
+              if [[ -z "$LINE" ]]; then
+                continue
+              elif [[ "$LINE" != *enr:* ]]; then
+                echo "Error: Line is not proper enr string: in file: $FILE"
+                echo "Invalid line: $LINE"
+                exit 1
+              fi
+
+              # Parse actual "enr" strings after the "enr:" prefix
+              ENR_STRING=$(echo "$LINE" | grep -o 'enr:[^[:space:]]*' | cut -d ':' -f2- | sed 's/^ *//')
+              echo "Processing line: $ENR_STRING"
+
+              # Use enr-cli read to validate the actual "enr" strings
+              enr-cli read "$ENR_STRING" 1>/dev/null || {
+                echo "Error: enr-cli read failed for line: $ENR_STRING in file: $FILE"
+                exit 1
+              }
+            done <<< "$LINES"
+          done
