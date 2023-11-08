@@ -1,0 +1,28 @@
+name: Ethereum key checkk
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *' # Daily at 00:00 UTC
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install PyYAML
+      run: pip install PyYAML
+
+    - name: Check keys
+      # --dev checks against an unpinned commit. since new vars can be added at any time unpinned commits
+      # are checked on a cron, not on regular flows.
+      run: python scripts/assert_declare_ethereum_vars.py ${{ github.event_name == 'schedule' && '--dev' }}
+
