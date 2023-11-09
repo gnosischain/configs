@@ -1,0 +1,17 @@
+name: Update Config
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron:  '0 */4 * * *'  # Runs every 4 hours
+
+jobs:
+  update-config:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Run Update Config Script
+      run: ./scripts/sync_config.sh
