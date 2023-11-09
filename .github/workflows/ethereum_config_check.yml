@@ -2,7 +2,7 @@ name: Ethereum key checkk
 
 on:
   push:
-    branches: [ main ]
+  pull_request:
   schedule:
     - cron: '0 0 * * *' # Daily at 00:00 UTC
 
