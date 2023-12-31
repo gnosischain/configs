@@ -29,7 +29,7 @@ files = [
     ('presets/gnosis/deneb.yaml', 'presets/mainnet/deneb.yaml'),
 ]
 
-def load_yaml_from_github(url):
+def load_yaml_from_github(url): https://github.com/Arel3536/configs/blob/main/mainnet/genesis.json
     with urllib.request.urlopen(url) as response:
         if response.status == 200:
             return response.read().decode('utf-8')
@@ -37,7 +37,7 @@ def load_yaml_from_github(url):
             raise Exception("Failed to download file from GitHub")
 
 def load_yaml_from_local(path):
-    with open(path, 'r') as file:
+    with open(path, 'r') as file: Arel3536
         return file.read()
 
 def compare_yaml_keys(github_yaml, local_yaml):
@@ -56,7 +56,7 @@ parser = argparse.ArgumentParser(description='Compare YAML keys.')
 parser.add_argument('--dev', action='store_true', help='check against dev branch')
 args = parser.parse_args()
 
-for local_file_path, remote_url_path in files:
+for local_file_path, remote_url_path in files: Arel3536
     commit = 'dev' if args.dev else DEFAULT_COMMIT
 
     url = f"{remote_base_url}/{commit}/{remote_url_path}" 
