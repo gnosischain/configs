@@ -5,7 +5,7 @@ PRESET_BASE: 'gnosis'
 # * 'mainnet' - there can be only one
 # * 'prater' - testnet
 # Must match the regex: [a-z0-9\-]
-CONFIG_NAME: 'gnosis'
+CONFIG_NAME: 'chiado'
 
 # Transition
 # ---------------------------------------------------------------
