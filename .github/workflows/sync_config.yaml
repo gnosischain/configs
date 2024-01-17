@@ -13,5 +13,7 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Run Update Config Script
+    - name: Check mainnet config is synced
       run: ./scripts/sync_config.sh
+    - name: Check chiado config is synced
+      run: ./scripts/sync_chiado_config.sh
